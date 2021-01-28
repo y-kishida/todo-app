@@ -4,14 +4,18 @@
   "description": "node.jsを使ったtodoアプリケーション",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "lite-server"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/y-kishida/todo-app.git"
-  },
+  "keywords": [
+    "typescript",
+    "course"
+  ],
   "author": "",
   "license": "ISC",
+  "devDependencies": {
+    "lite-server": "^2.6.1"
+  },
   "bugs": {
     "url": "https://github.com/y-kishida/todo-app/issues"
   },
