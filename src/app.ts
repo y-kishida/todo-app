@@ -1,4 +1,4 @@
-// autobind decorator
+// autobindデコレータ
 function autobind(_: any, _2: string, descriptor: PropertyDescriptor) {
   const originalMethod = descriptor.value;
   const adjDescriptor: PropertyDescriptor = {
@@ -12,7 +12,7 @@ function autobind(_: any, _2: string, descriptor: PropertyDescriptor) {
 }
 
 
-// ProjectInput Class
+// ProjectInputクラス
 class ProjectInput {
   templateElement: HTMLTemplateElement;
   hostElement: HTMLDivElement;
@@ -44,10 +44,41 @@ class ProjectInput {
     this.attach();
   }
 
+  // ユーザ入力値を取得
+  private gatherUserInput(): [string, string, number] | void {
+    const enteredTitle = this.titleInputElement.value;
+    const enteredDescription = this.descriptionInputElement.value;
+    const enteredManday = this.mandayInputElement.value;
+    // 値が入力されていない場合の処理
+    if (
+      enteredTitle.trim().length === 0 ||
+      enteredDescription.trim().length === 0 ||
+      enteredManday.trim().length === 0
+    ) {
+      alert('入力値が正しくありません。');
+      return;
+    // 3つの値が入力されている場合、値を返す
+    } else {
+      return [enteredTitle, enteredDescription, +enteredManday]
+    }
+  }
+
+  //プロジェクト追加後、入力した値を削除
+  private clearInputs() {
+    this.titleInputElement.value = '';
+    this.descriptionInputElement.value = '';
+    this.mandayInputElement.value = '';
+  }
+
   @autobind
   private submitHandler(event: Event) {
     event.preventDefault();
-    console.log(this.titleInputElement.value);
+    const userInput = this.gatherUserInput();
+    if (Array.isArray(userInput)) {
+      const [title, desc, manday] = userInput;
+      console.log(title, desc, manday);
+      this.clearInputs();
+    }
   }
 
   private configure() {
