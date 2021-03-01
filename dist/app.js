@@ -8,7 +8,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var ProjectStatus;
 (function (ProjectStatus) {
     ProjectStatus[ProjectStatus["Active"] = 0] = "Active";
-    ProjectStatus[ProjectStatus["finished"] = 1] = "finished";
+    ProjectStatus[ProjectStatus["Finished"] = 1] = "Finished";
 })(ProjectStatus || (ProjectStatus = {}));
 class Project {
     constructor(id, title, description, manday, status) {
@@ -55,19 +55,21 @@ function validate(validatableInput) {
     }
     if (validatableInput.minLength != null &&
         typeof validatableInput.value === 'string') {
-        isValid = isValid && validatableInput.value.length >= validatableInput.minLength;
+        isValid =
+            isValid && validatableInput.value.length >= validatableInput.minLength;
     }
     if (validatableInput.maxLength != null &&
         typeof validatableInput.value === 'string') {
-        isValid = isValid && validatableInput.value.length <= validatableInput.maxLength;
+        isValid =
+            isValid && validatableInput.value.length <= validatableInput.maxLength;
     }
     if (validatableInput.min != null &&
-        typeof validatableInput.value === 'string') {
-        isValid = isValid && validatableInput.value.length >= validatableInput.min;
+        typeof validatableInput.value === 'number') {
+        isValid = isValid && validatableInput.value >= validatableInput.min;
     }
     if (validatableInput.max != null &&
-        typeof validatableInput.value === 'string') {
-        isValid = isValid && validatableInput.value.length <= validatableInput.max;
+        typeof validatableInput.value === 'number') {
+        isValid = isValid && validatableInput.value <= validatableInput.max;
     }
     return isValid;
 }
@@ -112,13 +114,25 @@ class ProjectItem extends Component {
             return (this.project.manday / 20).toString() + '人月';
         }
     }
-    configure() { }
+    dragStartHandler(event) {
+        console.log(event);
+    }
+    dragEndHandler(_) {
+        console.log('Drag終了');
+    }
+    configure() {
+        this.element.addEventListener('dragstart', this.dragStartHandler);
+        this.element.addEventListener('dragend', this.dragEndHandler);
+    }
     renderContent() {
         this.element.querySelector('h2').textContent = this.project.title;
         this.element.querySelector('h3').textContent = this.manday;
         this.element.querySelector('p').textContent = this.project.description;
     }
 }
+__decorate([
+    autobind
+], ProjectItem.prototype, "dragStartHandler", null);
 class ProjectList extends Component {
     constructor(type) {
         super('project-list', 'app', false, `${type}-projects`);
@@ -133,7 +147,7 @@ class ProjectList extends Component {
                 if (this.type === 'active') {
                     return prj.status === ProjectStatus.Active;
                 }
-                return prj.status === ProjectStatus.finished;
+                return prj.status === ProjectStatus.Finished;
             });
             this.assignedProjects = relevantProjects;
             this.renderProjects();
@@ -176,18 +190,18 @@ class ProjectInput extends Component {
         const descriptionValidatable = {
             value: enteredDescription,
             required: true,
-            minLength: 5
+            minLength: 5,
         };
         const mandayValidatable = {
             value: +enteredManday,
             required: true,
             min: 1,
-            max: 1000
+            max: 1000,
         };
         if (!validate(titleValidatable) ||
             !validate(descriptionValidatable) ||
             !validate(mandayValidatable)) {
-            alert('入力値が正しくありません。');
+            alert('入力値が正しくありません。再度お試しください。');
             return;
         }
         else {
@@ -214,5 +228,5 @@ __decorate([
 ], ProjectInput.prototype, "submitHandler", null);
 const prjInput = new ProjectInput();
 const activePrjList = new ProjectList('active');
-const finishedprjList = new ProjectList('finished');
+const finishedPrjList = new ProjectList('finished');
 //# sourceMappingURL=app.js.map

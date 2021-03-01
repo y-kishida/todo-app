@@ -1,6 +1,19 @@
-//Project Type
+// Drag & Drop
+interface Draggable {
+  dragStartHandler(event: DragEvent): void;
+  dragEndHandler(event: DragEvent): void;
+}
+
+interface DragTarget {
+  dragOverHandler(event: DragEvent): void;
+  dropHandler(event: DragEvent): void;
+  dragLeaveHandler(event: DragEvent): void;
+}
+
+// Project Type
 enum ProjectStatus {
-  Active, finished
+  Active,
+  Finished,
 }
 
 class Project {
@@ -24,7 +37,7 @@ class State<T> {
   }
 }
 
-class ProjectState extends State<Project>{
+class ProjectState extends State<Project> {
   private projects: Project[] = [];
   private static instance: ProjectState;
 
@@ -40,14 +53,14 @@ class ProjectState extends State<Project>{
     return this.instance;
   }
 
-  addProject(title: string, description: string, manday:number) {
+  addProject(title: string, description: string, manday: number) {
     const newProject = new Project(
       Math.random().toString(),
       title,
       description,
       manday,
-      ProjectStatus.Active
-    )
+      ProjectStatus.Active,
+    );
     this.projects.push(newProject);
     for (const listenerFn of this.listeners) {
       listenerFn(this.projects.slice());
@@ -57,7 +70,7 @@ class ProjectState extends State<Project>{
 
 const projectState = ProjectState.getInstance();
 
-// validation
+// Validation
 interface Validatable {
   value: string | number;
   required?: boolean;
@@ -66,6 +79,7 @@ interface Validatable {
   min?: number;
   max?: number;
 }
+
 function validate(validatableInput: Validatable) {
   let isValid = true;
   if (validatableInput.required) {
@@ -75,30 +89,32 @@ function validate(validatableInput: Validatable) {
     validatableInput.minLength != null &&
     typeof validatableInput.value === 'string'
   ) {
-    isValid = isValid && validatableInput.value.length >= validatableInput.minLength;
+    isValid =
+      isValid && validatableInput.value.length >= validatableInput.minLength;
   }
   if (
     validatableInput.maxLength != null &&
     typeof validatableInput.value === 'string'
   ) {
-    isValid = isValid && validatableInput.value.length <= validatableInput.maxLength;
+    isValid =
+      isValid && validatableInput.value.length <= validatableInput.maxLength;
   }
   if (
     validatableInput.min != null &&
-    typeof validatableInput.value === 'string'
+    typeof validatableInput.value === 'number'
   ) {
-    isValid = isValid && validatableInput.value.length >= validatableInput.min;
+    isValid = isValid && validatableInput.value >= validatableInput.min;
   }
   if (
     validatableInput.max != null &&
-    typeof validatableInput.value === 'string'
+    typeof validatableInput.value === 'number'
   ) {
-    isValid = isValid && validatableInput.value.length <= validatableInput.max;
+    isValid = isValid && validatableInput.value <= validatableInput.max;
   }
   return isValid;
 }
 
-// autobindデコレータ
+// autobind decorator
 function autobind(_: any, _2: string, descriptor: PropertyDescriptor) {
   const originalMethod = descriptor.value;
   const adjDescriptor: PropertyDescriptor = {
@@ -112,7 +128,6 @@ function autobind(_: any, _2: string, descriptor: PropertyDescriptor) {
 }
 
 // Component Class
-
 abstract class Component<T extends HTMLElement, U extends HTMLElement> {
   templateElement: HTMLTemplateElement;
   hostElement: T;
@@ -123,11 +138,10 @@ abstract class Component<T extends HTMLElement, U extends HTMLElement> {
     hostElementId: string,
     insertAtStart: boolean,
     newElementId?: string,
-
   ) {
     this.templateElement = document.getElementById(
       templateId,
-      )! as HTMLTemplateElement;
+    )! as HTMLTemplateElement;
     this.hostElement = document.getElementById(hostElementId)! as T;
 
     const importedNode = document.importNode(
@@ -135,7 +149,7 @@ abstract class Component<T extends HTMLElement, U extends HTMLElement> {
       true,
     );
     this.element = importedNode.firstElementChild as U;
-    if(newElementId) {
+    if (newElementId) {
       this.element.id = newElementId;
     }
 
@@ -154,7 +168,8 @@ abstract class Component<T extends HTMLElement, U extends HTMLElement> {
 }
 
 // ProjectItem Class
-class ProjectItem extends Component<HTMLUListElement, HTMLLIElement> {
+class ProjectItem extends Component<HTMLUListElement, HTMLLIElement>
+  implements Draggable {
   private project: Project;
 
   get manday() {
@@ -164,15 +179,28 @@ class ProjectItem extends Component<HTMLUListElement, HTMLLIElement> {
       return (this.project.manday / 20).toString() + '人月';
     }
   }
+
   constructor(hostId: string, project: Project) {
-    super('single-project', hostId, false, project.id)
-    this.project = project
+    super('single-project', hostId, false, project.id);
+    this.project = project;
 
     this.configure();
     this.renderContent();
   }
 
-  configure() {}
+  @autobind
+  dragStartHandler(event: DragEvent) {
+    console.log(event);
+  }
+
+  dragEndHandler(_: DragEvent) {
+    console.log('Drag終了');
+  }
+
+  configure() {
+    this.element.addEventListener('dragstart', this.dragStartHandler);
+    this.element.addEventListener('dragend', this.dragEndHandler);
+  }
 
   renderContent() {
     this.element.querySelector('h2')!.textContent = this.project.title;
@@ -182,11 +210,11 @@ class ProjectItem extends Component<HTMLUListElement, HTMLLIElement> {
 }
 
 // ProjectList Class
-class ProjectList extends Component<HTMLDivElement, HTMLElement>{
+class ProjectList extends Component<HTMLDivElement, HTMLElement> {
   assignedProjects: Project[];
 
   constructor(private type: 'active' | 'finished') {
-    super('project-list', 'app', false, `${type}-projects`)
+    super('project-list', 'app', false, `${type}-projects`);
     this.assignedProjects = [];
 
     this.configure();
@@ -197,13 +225,13 @@ class ProjectList extends Component<HTMLDivElement, HTMLElement>{
     projectState.addListener((projects: Project[]) => {
       const relevantProjects = projects.filter(prj => {
         if (this.type === 'active') {
-         return prj.status === ProjectStatus.Active;
+          return prj.status === ProjectStatus.Active;
         }
-        return prj.status === ProjectStatus.finished;
-      })
+        return prj.status === ProjectStatus.Finished;
+      });
       this.assignedProjects = relevantProjects;
       this.renderProjects();
-    })
+    });
   }
 
   renderContent() {
@@ -222,18 +250,16 @@ class ProjectList extends Component<HTMLDivElement, HTMLElement>{
       new ProjectItem(listEl.id, prjItem);
     }
   }
-
 }
 
-// ProjectInputクラス
-class ProjectInput extends Component<HTMLDivElement, HTMLFormElement>{
+// ProjectInput Class
+class ProjectInput extends Component<HTMLDivElement, HTMLFormElement> {
   titleInputElement: HTMLInputElement;
   descriptionInputElement: HTMLInputElement;
   mandayInputElement: HTMLInputElement;
 
-
   constructor() {
-    super('project-input', 'app', true, 'user-input')
+    super('project-input', 'app', true, 'user-input');
 
     this.titleInputElement = this.element.querySelector(
       '#title',
@@ -254,12 +280,10 @@ class ProjectInput extends Component<HTMLDivElement, HTMLFormElement>{
 
   renderContent() {}
 
-  // ユーザ入力値を取得
   private gatherUserInput(): [string, string, number] | void {
     const enteredTitle = this.titleInputElement.value;
     const enteredDescription = this.descriptionInputElement.value;
     const enteredManday = this.mandayInputElement.value;
-    // 値が入力されていない場合の処理
 
     const titleValidatable: Validatable = {
       value: enteredTitle,
@@ -268,29 +292,26 @@ class ProjectInput extends Component<HTMLDivElement, HTMLFormElement>{
     const descriptionValidatable: Validatable = {
       value: enteredDescription,
       required: true,
-      minLength: 5
+      minLength: 5,
     };
     const mandayValidatable: Validatable = {
       value: +enteredManday,
       required: true,
       min: 1,
-      max: 1000
+      max: 1000,
     };
     if (
       !validate(titleValidatable) ||
       !validate(descriptionValidatable) ||
       !validate(mandayValidatable)
-
     ) {
-      alert('入力値が正しくありません。');
+      alert('入力値が正しくありません。再度お試しください。');
       return;
-    // 3つの値が入力されている場合、値を返す
     } else {
-      return [enteredTitle, enteredDescription, +enteredManday]
+      return [enteredTitle, enteredDescription, +enteredManday];
     }
   }
 
-  //プロジェクト追加後、入力した値を削除
   private clearInputs() {
     this.titleInputElement.value = '';
     this.descriptionInputElement.value = '';
@@ -311,4 +332,4 @@ class ProjectInput extends Component<HTMLDivElement, HTMLFormElement>{
 
 const prjInput = new ProjectInput();
 const activePrjList = new ProjectList('active');
-const finishedprjList = new ProjectList('finished')
+const finishedPrjList = new ProjectList('finished');
